@@ -1,6 +1,6 @@
-/* Magical Background & Stars */
+/* Magical Background & Stars 764ba2*/
 .magical-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #764ba2 0%, #17449c 100%);
   background-attachment: fixed;
   position: relative;
   overflow-x: hidden;
