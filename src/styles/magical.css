@@ -110,6 +110,7 @@
     0 4px 15px rgba(255, 110, 199, 0.3),
     0 0 20px rgba(192, 132, 252, 0.2);
   animation: magical-gradient 3s ease infinite;
+  white-space: nowrap;
 }
 
 .magical-button::before {
@@ -147,6 +148,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .magical-button-secondary:hover {
@@ -167,6 +169,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .magical-button-large {
@@ -584,9 +587,15 @@
     padding: 12px 0;
   }
   
-  .magical-header .container {
-    flex-direction: column;
-    gap: 12px;
+  .magical-button, .magical-button-secondary, .magical-button-danger {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .magical-header .container > div:last-child {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 }
 

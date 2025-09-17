@@ -168,7 +168,7 @@ const PreferencesForm = () => {
             <h2 className="text-3xl font-bold magical-text text-center mb-2">
               {currentStepData.title}
             </h2>
-            <p className="text-white/70 text-center mb-8">
+            <p className="text-white/70 text-center mb-12">
               This helps us create magical experiences just for you 💫
             </p>
 
@@ -209,7 +209,7 @@ const PreferencesForm = () => {
           </motion.button>
 
           <span className="text-white/60">
-            {currentStep} of {totalSteps}
+            {currentStep}/{totalSteps}
           </span>
 
           <motion.button
@@ -217,9 +217,9 @@ const PreferencesForm = () => {
             whileTap={{ scale: 0.95 }}
             onClick={handleNext}
             disabled={!isStepComplete()}
-            className="magical-button disabled:opacity-50"
+            className="magical-button disabled:opacity-50 flex items-center gap-2"
           >
-            {currentStep === totalSteps ? 'Complete ✨' : 'Next'}
+            {currentStep === totalSteps ? 'Complete Magic ✨' : 'Next'}
             <ChevronRight size={20} />
           </motion.button>
         </div>

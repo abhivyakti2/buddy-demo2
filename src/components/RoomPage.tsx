@@ -47,9 +47,9 @@ const RoomPage = () => {
       <motion.div
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
-        className="magical-header mb-8"
+        className="magical-header mb-8 px-4"
       >
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="container mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <motion.div
               animate={{ rotate: [0, 360] }}
@@ -76,15 +76,15 @@ const RoomPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 lg:gap-4 w-full lg:w-auto">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowParticipants(!showParticipants)}
-              className="magical-button-secondary flex items-center gap-2"
+              className="magical-button-secondary flex items-center gap-2 text-sm lg:text-base px-3 py-2 lg:px-4 lg:py-3"
             >
               <Users size={20} />
-              Participants ({participants.length})
+              <span className="hidden sm:inline">Participants</span> ({participants.length})
             </motion.button>
 
             {!isVoting ? (
@@ -92,27 +92,27 @@ const RoomPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={startVoting}
-                className="magical-button flex items-center gap-2"
+                className="magical-button flex items-center gap-2 text-sm lg:text-base px-3 py-2 lg:px-4 lg:py-3"
               >
                 <Play size={20} />
-                Start Voting
+                <span className="hidden sm:inline">Start</span> Vote
               </motion.button>
             ) : (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={endVoting}
-                className="magical-button-danger flex items-center gap-2"
+                className="magical-button-danger flex items-center gap-2 text-sm lg:text-base px-3 py-2 lg:px-4 lg:py-3"
               >
                 <Square size={20} />
-                End Voting
+                <span className="hidden sm:inline">End</span> Vote
               </motion.button>
             )}
 
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="magical-button-secondary flex items-center gap-2"
+              className="magical-button-secondary flex items-center gap-2 text-sm lg:text-base px-3 py-2 lg:px-4 lg:py-3"
             >
               <Eye size={20} />
               Results
