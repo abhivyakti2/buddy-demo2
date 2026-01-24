@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Heart, Star } from 'lucide-react';
+import { Heart, Star } from 'lucide-react';
 
 const HomePage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSignin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) {
+    if (username && email && password) {
       navigate('/preferences');
     }
   };
@@ -24,28 +25,31 @@ const HomePage = () => {
         className="glass-card w-full max-w-md p-8 text-center relative"
       >
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-4 -right-4 text-pink-300"
-        >
-          <Sparkles size={32} />
-        </motion.div>
-
-        <motion.div
-          animate={{ scale: [1, 1.1, 1] }}
+          animate={{ scale: [1, 1.1, 1] , rotate: 0}}
           transition={{ duration: 2, repeat: Infinity }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold magical-text mb-2">
-            ✨ VoteSpace ✨
+          <h1 className="text-3xl font-bold magical-text mb-2">
+            ✨ Buddies day out ✨
           </h1>
-          <p className="text-lg text-white/80">
-            Where dreams meet decisions 💫
+          <p className="text-base text-white/80">
+            End the ‘idk where to go’ texts forever✨
           </p>
         </motion.div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleSignin} className="space-y-6">
           <div className="space-y-4">
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="👤 Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="magical-input"
+                required
+              />
+            </div>
+            
             <div className="input-group">
               <input
                 type="email"
@@ -88,7 +92,7 @@ const HomePage = () => {
           transition={{ duration: 3, repeat: Infinity }}
           className="mt-8 text-white/60"
         >
-          <p className="text-sm">New to magic? ✨ Just dive in! ✨</p>
+          <p className="text-sm">Can’t decide where to go? Let your friends vote it out✨</p>
         </motion.div>
       </motion.div>
     </div>
