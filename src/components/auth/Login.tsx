@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, Star, Loader2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase auth
+import { tempAuth } from '../../lib/tempStorage';
 import { useAppDispatch } from '../../store/hooks';
 import { setUser, setError as setAuthError } from '../../store/authSlice';
 
@@ -20,15 +21,13 @@ const Login = () => {
     setError('');
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
+      const { data, error: signInError } = await tempAuth.signIn(email, password);
 
       if (signInError) throw signInError;
 
       if (data.user) {
-        dispatch(setUser(data.user));
+        dispatch(setUser(data.user as any));
         navigate('/room-selection');
       }
     } catch (err: any) {

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase
+import { tempRooms, tempParticipants, tempSessionPreferences, tempPreferences } from '../lib/tempStorage';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setCurrentRoom, setSessionPreferences } from '../store/roomsSlice';
 import { setUserPreferences } from '../store/preferencesSlice';
@@ -86,11 +87,8 @@ const CreateRoomForm = () => {
       if (!user) return;
 
       try {
-        const { data, error } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // TEMPORARY: Using tempPreferences instead of Supabase - TODO: Replace with Supabase
+        const { data, error } = await tempPreferences.get(user.id);
 
         if (error) throw error;
 
@@ -198,21 +196,13 @@ const CreateRoomForm = () => {
         is_active: false,
       };
 
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .insert(roomData)
-        .select()
-        .single();
+      // TEMPORARY: Using tempRooms instead of Supabase - TODO: Replace with Supabase
+      const { data: room, error: roomError } = await tempRooms.create(roomData);
 
       if (roomError) throw roomError;
 
-      const { error: participantError } = await supabase
-        .from('room_participants')
-        .insert({
-          room_id: room.id,
-          user_id: user.id,
-          is_online: true,
-        });
+      // TEMPORARY: Using tempParticipants instead of Supabase - TODO: Replace with Supabase
+      const { error: participantError } = await tempParticipants.add(room.id, user.id);
 
       if (participantError) throw participantError;
 
@@ -234,9 +224,8 @@ const CreateRoomForm = () => {
         },
       };
 
-      const { error: prefsError } = await supabase
-        .from('session_preferences')
-        .insert(sessionPrefs);
+      // TEMPORARY: Using tempSessionPreferences instead of Supabase - TODO: Replace with Supabase
+      const { error: prefsError } = await tempSessionPreferences.save(room.id, user.id, sessionPrefs);
 
       if (prefsError) throw prefsError;
 

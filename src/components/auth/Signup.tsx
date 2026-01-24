@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, CheckCircle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase auth
+import { tempAuth } from '../../lib/tempStorage';
+import { useAppDispatch } from '../../store/hooks';
+import { setUser } from '../../store/authSlice';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -12,6 +15,7 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,17 +35,13 @@ const Signup = () => {
     }
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/preferences`,
-        },
-      });
+      // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
+      const { data, error: signUpError } = await tempAuth.signUp(email, password);
 
       if (signUpError) throw signUpError;
 
       if (data.user) {
+        dispatch(setUser(data.user as any));
         setSuccess(true);
         setTimeout(() => {
           navigate('/preferences');

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase auth
+import { tempAuth } from '../../lib/tempStorage';
 import { useAppDispatch } from '../../store/hooks';
 import { setUser, setSession, setLoading } from '../../store/authSlice';
 import { motion } from 'framer-motion';
@@ -13,16 +14,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
+    tempAuth.getSession().then(({ data: { session } }) => {
       dispatch(setSession(session));
       dispatch(setUser(session?.user ?? null));
       dispatch(setLoading(false));
       setInitializing(false);
     });
 
+    // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = tempAuth.onAuthStateChange((_event: any, session: any) => {
       dispatch(setSession(session));
       dispatch(setUser(session?.user ?? null));
       dispatch(setLoading(false));

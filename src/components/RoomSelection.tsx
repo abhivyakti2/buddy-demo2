@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Users, Sparkles, Heart, Star, Loader2, LogOut } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase
+import { tempAuth, tempRooms, tempParticipants, tempSessionPreferences } from '../lib/tempStorage';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setCurrentRoom, setSessionPreferences, addParticipant } from '../store/roomsSlice';
 import { logout } from '../store/authSlice';
@@ -29,11 +30,8 @@ const RoomSelection = () => {
     setError('');
 
     try {
-      const { data: room, error: roomError } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('room_code', roomCode.trim().toUpperCase())
-        .maybeSingle();
+      // TEMPORARY: Using tempRooms instead of Supabase - TODO: Replace with Supabase
+      const { data: room, error: roomError } = await tempRooms.getByCode(roomCode.trim().toUpperCase());
 
       if (roomError) throw roomError;
 
@@ -43,41 +41,26 @@ const RoomSelection = () => {
         return;
       }
 
-      const { data: existingParticipant } = await supabase
-        .from('room_participants')
-        .select('*')
-        .eq('room_id', room.id)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // TEMPORARY: Using tempParticipants instead of Supabase - TODO: Replace with Supabase
+      const { error: participantError } = await tempParticipants.add(room.id, user.id);
 
-      if (!existingParticipant) {
-        const { error: participantError } = await supabase
-          .from('room_participants')
-          .insert({
-            room_id: room.id,
-            user_id: user.id,
-            is_online: true,
-          });
+      if (participantError) throw participantError;
 
-        if (participantError) throw participantError;
+      const sessionPrefs = {
+        room_id: room.id,
+        user_id: user.id,
+        budget: '',
+        distance_km: null,
+        location: userPreferences?.home_address || '',
+        outdoor_indoor: 'both',
+        activities: (userPreferences?.activities as string[]) || [],
+        food_preferences: userPreferences?.food_preferences || { categories: [], restrictions: '' },
+      };
 
-        const sessionPrefs = {
-          room_id: room.id,
-          user_id: user.id,
-          budget: '',
-          distance_km: null,
-          location: userPreferences?.home_address || '',
-          outdoor_indoor: 'both',
-          activities: (userPreferences?.activities as string[]) || [],
-          food_preferences: userPreferences?.food_preferences || { categories: [], restrictions: '' },
-        };
+      // TEMPORARY: Using tempSessionPreferences instead of Supabase - TODO: Replace with Supabase
+      const { error: prefsError } = await tempSessionPreferences.save(room.id, user.id, sessionPrefs);
 
-        const { error: prefsError } = await supabase
-          .from('session_preferences')
-          .upsert(sessionPrefs, { onConflict: 'room_id,user_id' });
-
-        if (prefsError) throw prefsError;
-      }
+      if (prefsError) throw prefsError;
 
       dispatch(setCurrentRoom(room));
       navigate(`/room/${room.id}`);
@@ -89,7 +72,8 @@ const RoomSelection = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    // TEMPORARY: Using tempAuth instead of Supabase - TODO: Replace with Supabase
+    await tempAuth.signOut();
     dispatch(logout());
     navigate('/');
   };
