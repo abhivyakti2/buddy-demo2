@@ -1,44 +1,122 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Copy, 
-  Users, 
-  Play, 
-  Square, 
-  Eye, 
+import {
+  Copy,
+  Users,
+  Play,
+  Square,
+  Eye,
   Sparkles,
   UserCircle,
   Crown,
   Heart
 } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { updateRoomStatus, setParticipants } from '../store/roomsSlice';
+import { socketEvents } from '../lib/socket';
 
 const RoomPage = () => {
   const { id: roomId } = useParams();
   const navigate = useNavigate();
-  const [isVoting, setIsVoting] = useState(false);
+  const dispatch = useAppDispatch();
+
+  // UI state - Keep in local state (not Redux)
   const [showParticipants, setShowParticipants] = useState(true);
-  
-  // Mock participants data
-  const [participants] = useState([
-    { id: 1, name: 'Luna ✨', avatar: '🌙', isHost: true, isOnline: true },
-    { id: 2, name: 'Stella 💫', avatar: '⭐', isHost: false, isOnline: true },
-    { id: 3, name: 'Aurora 🌸', avatar: '🌺', isHost: false, isOnline: true },
-    { id: 4, name: 'Iris 🦋', avatar: '🦋', isHost: false, isOnline: false },
-  ]);
+
+  // Shared state - Get from Redux
+  const currentRoom = useAppSelector((state) => state.rooms.currentRoom);
+  const participants = useAppSelector((state) => state.rooms.participants);
+  const { user } = useAppSelector((state) => state.auth);
+
+  const isVoting = currentRoom?.is_active || false;
+  const isHost = currentRoom?.creator_id === user?.id;
+
+  // TODO: Load participants from backend/database
+  // TODO: Setup WebSocket connection to listen for participant updates
+  useEffect(() => {
+    if (!roomId) return;
+
+    // TODO: Replace with actual participants fetch from backend
+    // Example: dispatch(fetchParticipants(roomId));
+
+    // For now, set mock participants data
+    const mockParticipants = [
+      {
+        id: 'participant_1',
+        room_id: roomId,
+        user_id: user?.id || 'user_1',
+        is_online: true,
+        joined_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+        user_email: user?.email,
+      },
+      {
+        id: 'participant_2',
+        room_id: roomId,
+        user_id: 'user_2',
+        is_online: true,
+        joined_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+        user_email: 'stella@example.com',
+      },
+      {
+        id: 'participant_3',
+        room_id: roomId,
+        user_id: 'user_3',
+        is_online: true,
+        joined_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+        user_email: 'aurora@example.com',
+      },
+      {
+        id: 'participant_4',
+        room_id: roomId,
+        user_id: 'user_4',
+        is_online: false,
+        joined_at: new Date().toISOString(),
+        last_seen: new Date(Date.now() - 3600000).toISOString(),
+        user_email: 'iris@example.com',
+      },
+    ];
+
+    dispatch(setParticipants(mockParticipants));
+
+    // TODO: Setup WebSocket listener for participant updates
+    // socketService.connect(dispatch, roomId);
+    // return () => socketService.disconnect(dispatch);
+  }, [roomId, dispatch, user]);
 
   const copyRoomId = () => {
-    navigator.clipboard.writeText(roomId || '');
-    // You could add a toast notification here
+    navigator.clipboard.writeText(currentRoom?.room_code || roomId || '');
   };
 
   const startVoting = () => {
-    setIsVoting(true);
+    if (!roomId || !isHost) return;
+
+    // Update Redux state
+    dispatch(updateRoomStatus(true));
+
+    // TODO: Send start voting event through WebSocket
+    socketEvents.startVoting(roomId);
+
+    // TODO: Update room status in backend/database
+    // Example: await tempRooms.update(roomId, { is_active: true });
+
     navigate(`/room/${roomId}/voting`);
   };
 
   const endVoting = () => {
-    setIsVoting(false);
+    if (!roomId || !isHost) return;
+
+    // Update Redux state
+    dispatch(updateRoomStatus(false));
+
+    // TODO: Send end voting event through WebSocket
+    socketEvents.endVoting(roomId);
+
+    // TODO: Update room status in backend/database
+    // Example: await tempRooms.update(roomId, { is_active: false });
   };
 
   return (
@@ -216,49 +294,56 @@ const RoomPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {participants.map((participant, index) => (
-                    <motion.div
-                      key={participant.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`participant-card ${participant.isOnline ? 'online' : 'offline'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="participant-avatar">
-                          <span className="text-2xl">{participant.avatar}</span>
-                          {participant.isOnline && (
-                            <div className="online-indicator"></div>
-                          )}
-                        </div>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-white">
-                              {participant.name}
-                            </span>
-                            {participant.isHost && (
-                              <Crown className="text-yellow-400" size={16} />
+                  {participants.map((participant, index) => {
+                    const isCreator = participant.user_id === currentRoom?.creator_id;
+                    const displayName = participant.user_email?.split('@')[0] || `User ${index + 1}`;
+                    const avatarEmojis = ['🌙', '⭐', '🌺', '🦋', '🌸', '💫', '✨', '🌟'];
+                    const avatar = avatarEmojis[index % avatarEmojis.length];
+
+                    return (
+                      <motion.div
+                        key={participant.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`participant-card ${participant.is_online ? 'online' : 'offline'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="participant-avatar">
+                            <span className="text-2xl">{avatar}</span>
+                            {participant.is_online && (
+                              <div className="online-indicator"></div>
                             )}
                           </div>
-                          <span className="text-xs text-white/60">
-                            {participant.isOnline ? 'Online' : 'Away'}
-                          </span>
-                        </div>
 
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ 
-                            duration: 2, 
-                            repeat: Infinity,
-                            delay: index * 0.5 
-                          }}
-                        >
-                          <Heart className="text-pink-300" size={16} />
-                        </motion.div>
-                      </div>
-                    </motion.div>
-                  ))}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-white">
+                                {displayName}
+                              </span>
+                              {isCreator && (
+                                <Crown className="text-yellow-400" size={16} />
+                              )}
+                            </div>
+                            <span className="text-xs text-white/60">
+                              {participant.is_online ? 'Online' : 'Away'}
+                            </span>
+                          </div>
+
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              delay: index * 0.5
+                            }}
+                          >
+                            <Heart className="text-pink-300" size={16} />
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 <motion.div

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Heart, 
-  Star, 
-  MapPin, 
-  DollarSign, 
-  Clock, 
+import {
+  Heart,
+  Star,
+  MapPin,
+  DollarSign,
+  Clock,
   Users,
   ThumbsUp,
   Eye,
@@ -14,14 +14,29 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { addVote, removeVote, setRecommendations } from '../store/recommendationsSlice';
+import { socketEvents } from '../lib/socket';
 
 const VotingPage = () => {
   const { id: roomId } = useParams();
-  const [currentRecommendation, setCurrentRecommendation] = useState(0);
-  const [votes, setVotes] = useState<{[key: number]: boolean}>({});
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
 
-  // Mock recommendation data
-  const recommendations = [
+  // UI state - Keep in local state (not Redux)
+  const [currentRecommendationIndex, setCurrentRecommendationIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Shared state - Get from Redux
+  const recommendations = useAppSelector((state) => state.recommendations.recommendations);
+  const votes = useAppSelector((state) => state.recommendations.votes);
+
+  // TODO: Load recommendations from backend/database when room starts voting
+  // For now, set mock data on component mount
+  useEffect(() => {
+    // TODO: Replace with actual data fetch from backend
+    // Example: dispatch(fetchRecommendations(roomId));
+    const mockRecommendations = [
     {
       id: 1,
       name: "Sparkle Bistro ✨",
@@ -58,14 +73,51 @@ const VotingPage = () => {
     }
   ];
 
-  const currentRec = recommendations[currentRecommendation];
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    // TODO: Replace with actual data loading from backend
+    if (mockRecommendations.length > 0) {
+      dispatch(setRecommendations(mockRecommendations as any));
+    }
+  }, [dispatch]);
 
-  const handleVote = (recommendationId: number) => {
-    setVotes(prev => ({
-      ...prev,
-      [recommendationId]: !prev[recommendationId]
-    }));
+  if (!recommendations || recommendations.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white/70">Loading recommendations...</p>
+      </div>
+    );
+  }
+
+  const currentRec = recommendations[currentRecommendationIndex];
+
+  // Check if current user has voted for this recommendation
+  const userVote = votes[currentRec.id]?.find((vote: any) => vote.user_id === user?.id);
+  const hasVoted = !!userVote;
+
+  // Count total votes for this recommendation
+  const totalVotes = votes[currentRec.id]?.length || 0;
+
+  // Voting handler - dispatches Redux action
+  const handleVote = (recommendationId: string) => {
+    if (!user || !roomId) return;
+
+    if (hasVoted) {
+      // Remove vote
+      dispatch(removeVote({ recommendationId, userId: user.id }));
+    } else {
+      // Add vote
+      const vote = {
+        id: `vote_${Date.now()}`,
+        room_id: roomId,
+        recommendation_id: recommendationId,
+        user_id: user.id,
+        vote_type: 'yes',
+        created_at: new Date().toISOString(),
+      };
+      dispatch(addVote(vote as any));
+
+      // TODO: Send vote through WebSocket for real-time updates
+      socketEvents.castVote(roomId, recommendationId, user.id, 'yes');
+    }
   };
 
   const nextImage = () => {
@@ -81,14 +133,14 @@ const VotingPage = () => {
   };
 
   const nextRecommendation = () => {
-    setCurrentRecommendation((prev) => 
+    setCurrentRecommendationIndex((prev) =>
       (prev + 1) % recommendations.length
     );
     setCurrentImageIndex(0);
   };
 
   const prevRecommendation = () => {
-    setCurrentRecommendation((prev) => 
+    setCurrentRecommendationIndex((prev) =>
       prev === 0 ? recommendations.length - 1 : prev - 1
     );
     setCurrentImageIndex(0);
@@ -118,7 +170,7 @@ const VotingPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-white/70">
-              {currentRecommendation + 1} of {recommendations.length}
+              {currentRecommendationIndex + 1} of {recommendations.length}
             </span>
             <div className="flex gap-2">
               <motion.button
@@ -145,7 +197,7 @@ const VotingPage = () => {
       <div className="container mx-auto max-w-4xl">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentRecommendation}
+            key={currentRecommendationIndex}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.1 }}
@@ -223,22 +275,22 @@ const VotingPage = () => {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleVote(currentRec.id)}
-                  className={`vote-button ${votes[currentRec.id] ? 'voted' : ''}`}
+                  className={`vote-button ${hasVoted ? 'voted' : ''}`}
                 >
                   <motion.div
-                    animate={votes[currentRec.id] ? {
+                    animate={hasVoted ? {
                       scale: [1, 1.3, 1],
                       rotate: [0, 360, 0]
                     } : {}}
                     transition={{ duration: 0.6 }}
                   >
-                    <Heart 
-                      size={32} 
-                      fill={votes[currentRec.id] ? "currentColor" : "none"}
+                    <Heart
+                      size={32}
+                      fill={hasVoted ? "currentColor" : "none"}
                     />
                   </motion.div>
                   <span className="ml-2 font-semibold">
-                    {votes[currentRec.id] ? 'Loved!' : 'Vote'}
+                    {hasVoted ? 'Loved!' : 'Vote'}
                   </span>
                 </motion.button>
               </div>
@@ -291,11 +343,11 @@ const VotingPage = () => {
                 <div className="flex items-center gap-4 text-white/70">
                   <div className="flex items-center gap-2">
                     <ThumbsUp size={16} />
-                    <span>12 votes</span>
+                    <span>{totalVotes} {totalVotes === 1 ? 'vote' : 'votes'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Eye size={16} />
-                    <span>4 viewing</span>
+                    <span>Live</span>
                   </div>
                 </div>
 

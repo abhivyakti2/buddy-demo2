@@ -1,5 +1,10 @@
-// TEMPORARY STORAGE - Replace with Supabase database integration later
+// ========================================
+// TEMPORARY STORAGE - DO NOT USE IN PRODUCTION
+// ========================================
 // This file provides localStorage-based storage as a temporary solution
+// TODO: Replace ALL functions in this file with real Supabase database calls
+// TODO: Remove this file entirely once database integration is complete
+// ========================================
 
 export interface TempUser {
   id: string;

@@ -3,6 +3,7 @@ import authReducer from './authSlice';
 import preferencesReducer from './preferencesSlice';
 import roomsReducer from './roomsSlice';
 import recommendationsReducer from './recommendationsSlice';
+import socketReducer from './socketSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     preferences: preferencesReducer,
     rooms: roomsReducer,
     recommendations: recommendationsReducer,
+    socket: socketReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
