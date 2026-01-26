@@ -13,7 +13,7 @@ function AuthProvider({ children }: AuthProviderProps) {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace temp repository with Supabase auth.getSession()
+    // TODO: Replace this with real DB / Supabase / API call
     authRepository.getSession().then(({ data: { session } }) => {
       dispatch(setSession(session));
       dispatch(setUser(session?.user ?? null));
@@ -21,7 +21,7 @@ function AuthProvider({ children }: AuthProviderProps) {
       setInitializing(false);
     });
 
-    // TODO: Replace temp repository with Supabase auth.onAuthStateChange()
+    // TODO: Replace this with real DB / Supabase / API call
     const {
       data: { subscription },
     } = authRepository.onAuthStateChange((_event: any, session: any) => {

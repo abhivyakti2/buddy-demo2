@@ -38,7 +38,7 @@ const RoomPage = () => {
 
     const loadParticipants = async () => {
       try {
-        // TODO: Replace temp repository with Supabase participants fetch
+        // TODO: Replace this with real DB / Supabase / API call
         const { data } = await participantsRepository.get(roomId);
 
         if (data && data.length > 0) {
@@ -81,7 +81,7 @@ const RoomPage = () => {
     // Update Redux state
     dispatch(updateRoomStatus(true));
 
-    // TODO: Persist room status change to backend/database
+    // TODO: Replace this with real DB / Supabase / API call
     await roomsRepository.update(roomId, { is_active: true });
 
     // TODO: Emit start voting event via WebSocket for real-time updates
@@ -96,7 +96,7 @@ const RoomPage = () => {
     // Update Redux state
     dispatch(updateRoomStatus(false));
 
-    // TODO: Persist room status change to backend/database
+    // TODO: Replace this with real DB / Supabase / API call
     await roomsRepository.update(roomId, { is_active: false });
 
     // TODO: Emit end voting event via WebSocket for real-time updates

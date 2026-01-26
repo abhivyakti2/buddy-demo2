@@ -100,7 +100,7 @@ const CreateRoomForm = () => {
       }
 
       try {
-        // TODO: Replace temp repository with Supabase preferences fetch
+        // TODO: Replace this with real DB / Supabase / API call
         const { data, error } = await preferencesRepository.get(user.id);
 
         if (error) throw error;
@@ -209,12 +209,12 @@ const CreateRoomForm = () => {
         is_active: false,
       };
 
-      // TODO: Replace temp repository with Supabase rooms insert
+      // TODO: Replace this with real DB / Supabase / API call
       const { data: room, error: roomError } = await roomsRepository.create(roomData);
 
       if (roomError) throw roomError;
 
-      // TODO: Replace temp repository with Supabase participants insert
+      // TODO: Replace this with real DB / Supabase / API call
       const { error: participantError } = await participantsRepository.add(room.id, user.id);
 
       if (participantError) throw participantError;
@@ -237,7 +237,7 @@ const CreateRoomForm = () => {
         },
       };
 
-      // TODO: Replace temp repository with Supabase session_preferences insert
+      // TODO: Replace this with real DB / Supabase / API call
       const { error: prefsError } = await sessionPreferencesRepository.save(room.id, user.id, sessionPrefs);
 
       if (prefsError) throw prefsError;

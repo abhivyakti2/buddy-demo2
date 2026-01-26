@@ -29,7 +29,7 @@ const RoomSelection = () => {
     setError('');
 
     try {
-      // TODO: Replace temp repository with Supabase rooms fetch
+      // TODO: Replace this with real DB / Supabase / API call
       const { data: room, error: roomError } = await roomsRepository.getByCode(roomCode.trim().toUpperCase());
 
       if (roomError) throw roomError;
@@ -40,7 +40,7 @@ const RoomSelection = () => {
         return;
       }
 
-      // TODO: Replace temp repository with Supabase participants insert
+      // TODO: Replace this with real DB / Supabase / API call
       const { error: participantError } = await participantsRepository.add(room.id, user.id);
 
       if (participantError) throw participantError;
@@ -56,7 +56,7 @@ const RoomSelection = () => {
         food_preferences: userPreferences?.food_preferences || { categories: [], restrictions: '' },
       };
 
-      // TODO: Replace temp repository with Supabase session_preferences insert
+      // TODO: Replace this with real DB / Supabase / API call
       const { error: prefsError } = await sessionPreferencesRepository.save(room.id, user.id, sessionPrefs);
 
       if (prefsError) throw prefsError;
@@ -72,7 +72,7 @@ const RoomSelection = () => {
   };
 
   const handleLogout = async () => {
-    // TODO: Replace temp repository with Supabase auth.signOut()
+    // TODO: Replace this with real DB / Supabase / API call
     await authRepository.signOut();
     dispatch(logout());
     navigate('/');

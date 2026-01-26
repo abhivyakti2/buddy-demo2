@@ -34,7 +34,7 @@ const Signup = () => {
     }
 
     try {
-      // TODO: Replace temp repository with Supabase auth.signUp()
+      // TODO: Replace this with real DB / Supabase / API call
       const { data, error: signUpError } = await authRepository.signUp(email, password);
 
       if (signUpError) throw signUpError;

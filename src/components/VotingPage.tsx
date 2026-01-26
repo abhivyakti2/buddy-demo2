@@ -33,13 +33,13 @@ const VotingPage = () => {
 
     const loadData = async () => {
       try {
-        // TODO: Replace temp repository with backend/AI service fetch
+        // TODO: Replace this with real DB / Supabase / API call
         const { data: recs } = await recommendationsRepository.getByRoom(roomId);
         if (recs && recs.length > 0) {
           dispatch(setRecommendations(recs as any));
         }
 
-        // TODO: Replace temp repository with Supabase votes fetch
+        // TODO: Replace this with real DB / Supabase / API call
         const { data: votesData } = await votesRepository.getByRoom(roomId);
         if (votesData) {
           // Load existing votes into Redux
@@ -80,7 +80,7 @@ const VotingPage = () => {
       // Remove vote from Redux
       dispatch(removeVote({ recommendationId, userId: user.id }));
 
-      // TODO: Persist vote removal to temp storage/backend
+      // TODO: Replace this with real DB / Supabase / API call
       await votesRepository.remove(roomId, recommendationId, user.id);
 
       // TODO: Emit vote removal event via WebSocket for real-time updates
@@ -97,7 +97,7 @@ const VotingPage = () => {
       };
       dispatch(addVote(vote as any));
 
-      // TODO: Persist vote to temp storage/backend
+      // TODO: Replace this with real DB / Supabase / API call
       await votesRepository.cast(vote);
 
       // TODO: Emit vote cast event via WebSocket for real-time updates

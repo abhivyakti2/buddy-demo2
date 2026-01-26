@@ -151,7 +151,7 @@ const PreferencesForm = () => {
         home_address: formData.homeAddress,
       };
 
-      // TODO: Replace temp repository with Supabase preferences upsert
+      // TODO: Replace this with real DB / Supabase / API call
       const { error: upsertError } = await preferencesRepository.save(user.id, preferences);
 
       if (upsertError) throw upsertError;

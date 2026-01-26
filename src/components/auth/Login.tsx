@@ -20,7 +20,7 @@ const Login = () => {
     setError('');
 
     try {
-      // TODO: Replace temp repository with Supabase auth.signInWithPassword()
+      // TODO: Replace this with real DB / Supabase / API call
       const { data, error: signInError } = await authRepository.signIn(email, password);
 
       if (signInError) throw signInError;
