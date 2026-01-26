@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
-// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase
-import { tempPreferences } from '../lib/tempStorage';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setUserPreferences } from '../store/preferencesSlice';
+import { preferencesRepository } from '../lib/repositories';
 
 const PreferencesForm = () => {
   const navigate = useNavigate();
@@ -151,8 +150,8 @@ const PreferencesForm = () => {
         home_address: formData.homeAddress,
       };
 
-      // TEMPORARY: Using tempPreferences instead of Supabase - TODO: Replace with Supabase
-      const { error: upsertError } = await tempPreferences.save(user.id, preferences);
+      // TODO: Replace temp repository with Supabase preferences upsert
+      const { error: upsertError } = await preferencesRepository.save(user.id, preferences);
 
       if (upsertError) throw upsertError;
 

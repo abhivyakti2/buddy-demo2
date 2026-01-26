@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase auth
-import { tempAuth } from '../../lib/tempStorage';
 import { useAppDispatch } from '../../store/hooks';
 import { setUser, setSession, setLoading } from '../../store/authSlice';
 import { motion } from 'framer-motion';
+import { authRepository } from '../../lib/repositories';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -14,18 +13,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
-    tempAuth.getSession().then(({ data: { session } }) => {
+    // TODO: Replace temp repository with Supabase auth.getSession()
+    authRepository.getSession().then(({ data: { session } }) => {
       dispatch(setSession(session));
       dispatch(setUser(session?.user ?? null));
       dispatch(setLoading(false));
       setInitializing(false);
     });
 
-    // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
+    // TODO: Replace temp repository with Supabase auth.onAuthStateChange()
     const {
       data: { subscription },
-    } = tempAuth.onAuthStateChange((_event: any, session: any) => {
+    } = authRepository.onAuthStateChange((_event: any, session: any) => {
       dispatch(setSession(session));
       dispatch(setUser(session?.user ?? null));
       dispatch(setLoading(false));

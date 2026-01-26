@@ -15,6 +15,7 @@ import {
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateRoomStatus, setParticipants } from '../store/roomsSlice';
 import { socketEvents } from '../lib/socket';
+import { participantsRepository, roomsRepository } from '../lib/repositories';
 
 const RoomPage = () => {
   const { id: roomId } = useParams();
@@ -37,86 +38,71 @@ const RoomPage = () => {
   useEffect(() => {
     if (!roomId) return;
 
-    // TODO: Replace with actual participants fetch from backend
-    // Example: dispatch(fetchParticipants(roomId));
+    const loadParticipants = async () => {
+      try {
+        // TODO: Replace temp repository with Supabase participants fetch
+        const { data } = await participantsRepository.get(roomId);
 
-    // For now, set mock participants data
-    const mockParticipants = [
-      {
-        id: 'participant_1',
-        room_id: roomId,
-        user_id: user?.id || 'user_1',
-        is_online: true,
-        joined_at: new Date().toISOString(),
-        last_seen: new Date().toISOString(),
-        user_email: user?.email,
-      },
-      {
-        id: 'participant_2',
-        room_id: roomId,
-        user_id: 'user_2',
-        is_online: true,
-        joined_at: new Date().toISOString(),
-        last_seen: new Date().toISOString(),
-        user_email: 'stella@example.com',
-      },
-      {
-        id: 'participant_3',
-        room_id: roomId,
-        user_id: 'user_3',
-        is_online: true,
-        joined_at: new Date().toISOString(),
-        last_seen: new Date().toISOString(),
-        user_email: 'aurora@example.com',
-      },
-      {
-        id: 'participant_4',
-        room_id: roomId,
-        user_id: 'user_4',
-        is_online: false,
-        joined_at: new Date().toISOString(),
-        last_seen: new Date(Date.now() - 3600000).toISOString(),
-        user_email: 'iris@example.com',
-      },
-    ];
+        if (data && data.length > 0) {
+          // TODO: Enrich participants with user info from users table
+          // For now, add mock user_email for display
+          const enrichedParticipants = data.map((p: any, index: number) => ({
+            ...p,
+            user_email: p.user_id === user?.id
+              ? user.email
+              : ['stella@example.com', 'aurora@example.com', 'iris@example.com'][index % 3]
+          }));
 
-    dispatch(setParticipants(mockParticipants));
+          dispatch(setParticipants(enrichedParticipants));
+        }
+      } catch (error) {
+        console.error('Error loading participants:', error);
+      }
+    };
+
+    loadParticipants();
 
     // TODO: Setup WebSocket listener for participant updates
+    // TODO: Emit participant join event via WebSocket
     // socketService.connect(dispatch, roomId);
-    // return () => socketService.disconnect(dispatch);
+    // socketEvents.updateParticipantStatus(roomId, user?.id || '', true);
+    // return () => {
+    //   // TODO: Emit participant leave event via WebSocket
+    //   socketEvents.updateParticipantStatus(roomId, user?.id || '', false);
+    //   socketService.disconnect(dispatch);
+    // };
   }, [roomId, dispatch, user]);
 
   const copyRoomId = () => {
     navigator.clipboard.writeText(currentRoom?.room_code || roomId || '');
   };
 
-  const startVoting = () => {
+  const startVoting = async () => {
     if (!roomId || !isHost) return;
 
     // Update Redux state
     dispatch(updateRoomStatus(true));
 
-    // TODO: Send start voting event through WebSocket
-    socketEvents.startVoting(roomId);
+    // TODO: Persist room status change to backend/database
+    await roomsRepository.update(roomId, { is_active: true });
 
-    // TODO: Update room status in backend/database
-    // Example: await tempRooms.update(roomId, { is_active: true });
+    // TODO: Emit start voting event via WebSocket for real-time updates
+    socketEvents.startVoting(roomId);
 
     navigate(`/room/${roomId}/voting`);
   };
 
-  const endVoting = () => {
+  const endVoting = async () => {
     if (!roomId || !isHost) return;
 
     // Update Redux state
     dispatch(updateRoomStatus(false));
 
-    // TODO: Send end voting event through WebSocket
-    socketEvents.endVoting(roomId);
+    // TODO: Persist room status change to backend/database
+    await roomsRepository.update(roomId, { is_active: false });
 
-    // TODO: Update room status in backend/database
-    // Example: await tempRooms.update(roomId, { is_active: false });
+    // TODO: Emit end voting event via WebSocket for real-time updates
+    socketEvents.endVoting(roomId);
   };
 
   return (

@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Users, Sparkles, Heart, Star, Loader2, LogOut } from 'lucide-react';
-// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase
-import { tempAuth, tempRooms, tempParticipants, tempSessionPreferences } from '../lib/tempStorage';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setCurrentRoom, setSessionPreferences, addParticipant } from '../store/roomsSlice';
+import { setCurrentRoom, setSessionPreferences } from '../store/roomsSlice';
 import { logout } from '../store/authSlice';
+import { authRepository, roomsRepository, participantsRepository, sessionPreferencesRepository } from '../lib/repositories';
 
 const RoomSelection = () => {
   const navigate = useNavigate();
@@ -30,8 +29,8 @@ const RoomSelection = () => {
     setError('');
 
     try {
-      // TEMPORARY: Using tempRooms instead of Supabase - TODO: Replace with Supabase
-      const { data: room, error: roomError } = await tempRooms.getByCode(roomCode.trim().toUpperCase());
+      // TODO: Replace temp repository with Supabase rooms fetch
+      const { data: room, error: roomError } = await roomsRepository.getByCode(roomCode.trim().toUpperCase());
 
       if (roomError) throw roomError;
 
@@ -41,8 +40,8 @@ const RoomSelection = () => {
         return;
       }
 
-      // TEMPORARY: Using tempParticipants instead of Supabase - TODO: Replace with Supabase
-      const { error: participantError } = await tempParticipants.add(room.id, user.id);
+      // TODO: Replace temp repository with Supabase participants insert
+      const { error: participantError } = await participantsRepository.add(room.id, user.id);
 
       if (participantError) throw participantError;
 
@@ -57,12 +56,13 @@ const RoomSelection = () => {
         food_preferences: userPreferences?.food_preferences || { categories: [], restrictions: '' },
       };
 
-      // TEMPORARY: Using tempSessionPreferences instead of Supabase - TODO: Replace with Supabase
-      const { error: prefsError } = await tempSessionPreferences.save(room.id, user.id, sessionPrefs);
+      // TODO: Replace temp repository with Supabase session_preferences insert
+      const { error: prefsError } = await sessionPreferencesRepository.save(room.id, user.id, sessionPrefs);
 
       if (prefsError) throw prefsError;
 
       dispatch(setCurrentRoom(room));
+      dispatch(setSessionPreferences(sessionPrefs));
       navigate(`/room/${room.id}`);
     } catch (err: any) {
       setError(err.message || 'Failed to join room');
@@ -72,8 +72,8 @@ const RoomSelection = () => {
   };
 
   const handleLogout = async () => {
-    // TEMPORARY: Using tempAuth instead of Supabase - TODO: Replace with Supabase
-    await tempAuth.signOut();
+    // TODO: Replace temp repository with Supabase auth.signOut()
+    await authRepository.signOut();
     dispatch(logout());
     navigate('/');
   };

@@ -15,8 +15,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addVote, removeVote, setRecommendations } from '../store/recommendationsSlice';
+import { addVote, removeVote, setRecommendations, setVotes } from '../store/recommendationsSlice';
 import { socketEvents } from '../lib/socket';
+import { recommendationsRepository, votesRepository } from '../lib/repositories';
 
 const VotingPage = () => {
   const { id: roomId } = useParams();
@@ -32,52 +33,32 @@ const VotingPage = () => {
   const votes = useAppSelector((state) => state.recommendations.votes);
 
   // TODO: Load recommendations from backend/database when room starts voting
-  // For now, set mock data on component mount
   useEffect(() => {
-    // TODO: Replace with actual data fetch from backend
-    // Example: dispatch(fetchRecommendations(roomId));
-    const mockRecommendations = [
-    {
-      id: 1,
-      name: "Sparkle Bistro ✨",
-      images: [
-        "https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg",
-        "https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg",
-        "https://images.pexels.com/photos/776538/pexels-photo-776538.jpeg"
-      ],
-      parameters: {
-        price: { value: "$$", score: 8, icon: DollarSign },
-        location: { value: "Downtown", score: 9, icon: MapPin },
-        ambience: { value: "Cozy & Magical", score: 10, icon: Sparkles },
-        reviews: { value: "4.8/5 ⭐", score: 9, icon: Star },
-        capacity: { value: "20-40 people", score: 8, icon: Users },
-        timing: { value: "Open until 11 PM", score: 7, icon: Clock }
-      }
-    },
-    {
-      id: 2,
-      name: "Moonlight Lounge 🌙",
-      images: [
-        "https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg",
-        "https://images.pexels.com/photos/2253643/pexels-photo-2253643.jpeg",
-        "https://images.pexels.com/photos/1581384/pexels-photo-1581384.jpeg"
-      ],
-      parameters: {
-        price: { value: "$$$", score: 6, icon: DollarSign },
-        location: { value: "Uptown", score: 7, icon: MapPin },
-        ambience: { value: "Elegant & Dreamy", score: 9, icon: Sparkles },
-        reviews: { value: "4.6/5 ⭐", score: 8, icon: Star },
-        capacity: { value: "30-60 people", score: 9, icon: Users },
-        timing: { value: "Open until midnight", score: 9, icon: Clock }
-      }
-    }
-  ];
+    if (!roomId) return;
 
-    // TODO: Replace with actual data loading from backend
-    if (mockRecommendations.length > 0) {
-      dispatch(setRecommendations(mockRecommendations as any));
-    }
-  }, [dispatch]);
+    const loadData = async () => {
+      try {
+        // TODO: Replace temp repository with backend/AI service fetch
+        const { data: recs } = await recommendationsRepository.getByRoom(roomId);
+        if (recs && recs.length > 0) {
+          dispatch(setRecommendations(recs as any));
+        }
+
+        // TODO: Replace temp repository with Supabase votes fetch
+        const { data: votesData } = await votesRepository.getByRoom(roomId);
+        if (votesData) {
+          // Load existing votes into Redux
+          Object.entries(votesData).forEach(([recId, votesList]) => {
+            dispatch(setVotes({ recommendationId: recId, votes: votesList as any }));
+          });
+        }
+      } catch (error) {
+        console.error('Error loading recommendations:', error);
+      }
+    };
+
+    loadData();
+  }, [dispatch, roomId]);
 
   if (!recommendations || recommendations.length === 0) {
     return (
@@ -96,15 +77,21 @@ const VotingPage = () => {
   // Count total votes for this recommendation
   const totalVotes = votes[currentRec.id]?.length || 0;
 
-  // Voting handler - dispatches Redux action
-  const handleVote = (recommendationId: string) => {
+  // Voting handler - dispatches Redux action and persists to storage
+  const handleVote = async (recommendationId: string) => {
     if (!user || !roomId) return;
 
     if (hasVoted) {
-      // Remove vote
+      // Remove vote from Redux
       dispatch(removeVote({ recommendationId, userId: user.id }));
+
+      // TODO: Persist vote removal to temp storage/backend
+      await votesRepository.remove(roomId, recommendationId, user.id);
+
+      // TODO: Emit vote removal event via WebSocket for real-time updates
+      socketEvents.castVote(roomId, recommendationId, user.id, 'removed');
     } else {
-      // Add vote
+      // Add vote to Redux
       const vote = {
         id: `vote_${Date.now()}`,
         room_id: roomId,
@@ -115,7 +102,10 @@ const VotingPage = () => {
       };
       dispatch(addVote(vote as any));
 
-      // TODO: Send vote through WebSocket for real-time updates
+      // TODO: Persist vote to temp storage/backend
+      await votesRepository.cast(vote);
+
+      // TODO: Emit vote cast event via WebSocket for real-time updates
       socketEvents.castVote(roomId, recommendationId, user.id, 'yes');
     }
   };

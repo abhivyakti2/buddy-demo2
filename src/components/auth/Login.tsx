@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Heart, Star, Loader2 } from 'lucide-react';
-// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase auth
-import { tempAuth } from '../../lib/tempStorage';
 import { useAppDispatch } from '../../store/hooks';
 import { setUser, setError as setAuthError } from '../../store/authSlice';
+import { authRepository } from '../../lib/repositories';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -21,8 +20,8 @@ const Login = () => {
     setError('');
 
     try {
-      // TEMPORARY: Using tempAuth instead of supabase.auth - TODO: Replace with Supabase
-      const { data, error: signInError } = await tempAuth.signIn(email, password);
+      // TODO: Replace temp repository with Supabase auth.signInWithPassword()
+      const { data, error: signInError } = await authRepository.signIn(email, password);
 
       if (signInError) throw signInError;
 

@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
-// TEMPORARY: Using temp storage instead of Supabase - TODO: Replace with real Supabase
-import { tempRooms, tempParticipants, tempSessionPreferences, tempPreferences } from '../lib/tempStorage';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setCurrentRoom, setSessionPreferences } from '../store/roomsSlice';
 import { setUserPreferences } from '../store/preferencesSlice';
+import { roomsRepository, participantsRepository, sessionPreferencesRepository, preferencesRepository } from '../lib/repositories';
 
 const CreateRoomForm = () => {
   const navigate = useNavigate();
@@ -86,9 +85,23 @@ const CreateRoomForm = () => {
     const loadPreferences = async () => {
       if (!user) return;
 
+      // TODO: Skip backend fetch if preferences already exist in Redux (single source of truth)
+      if (userPreferences) {
+        // Use existing Redux preferences
+        setFormData((prev) => ({
+          ...prev,
+          activities: (userPreferences.activities as string[]) || [],
+          foodCategories: ((userPreferences.food_preferences as any)?.categories as string[]) || [],
+          foodRestrictions: ((userPreferences.food_preferences as any)?.restrictions as string) || '',
+          location: userPreferences.home_address || '',
+        }));
+        setLoading(false);
+        return;
+      }
+
       try {
-        // TEMPORARY: Using tempPreferences instead of Supabase - TODO: Replace with Supabase
-        const { data, error } = await tempPreferences.get(user.id);
+        // TODO: Replace temp repository with Supabase preferences fetch
+        const { data, error } = await preferencesRepository.get(user.id);
 
         if (error) throw error;
 
@@ -110,7 +123,7 @@ const CreateRoomForm = () => {
     };
 
     loadPreferences();
-  }, [user, dispatch]);
+  }, [user, dispatch, userPreferences]);
 
   const handleMoodToggle = (value: string) => {
     setFormData((prev) => ({
@@ -196,13 +209,13 @@ const CreateRoomForm = () => {
         is_active: false,
       };
 
-      // TEMPORARY: Using tempRooms instead of Supabase - TODO: Replace with Supabase
-      const { data: room, error: roomError } = await tempRooms.create(roomData);
+      // TODO: Replace temp repository with Supabase rooms insert
+      const { data: room, error: roomError } = await roomsRepository.create(roomData);
 
       if (roomError) throw roomError;
 
-      // TEMPORARY: Using tempParticipants instead of Supabase - TODO: Replace with Supabase
-      const { error: participantError } = await tempParticipants.add(room.id, user.id);
+      // TODO: Replace temp repository with Supabase participants insert
+      const { error: participantError } = await participantsRepository.add(room.id, user.id);
 
       if (participantError) throw participantError;
 
@@ -224,8 +237,8 @@ const CreateRoomForm = () => {
         },
       };
 
-      // TEMPORARY: Using tempSessionPreferences instead of Supabase - TODO: Replace with Supabase
-      const { error: prefsError } = await tempSessionPreferences.save(room.id, user.id, sessionPrefs);
+      // TODO: Replace temp repository with Supabase session_preferences insert
+      const { error: prefsError } = await sessionPreferencesRepository.save(room.id, user.id, sessionPrefs);
 
       if (prefsError) throw prefsError;
 

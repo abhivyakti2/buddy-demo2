@@ -15,6 +15,8 @@ import {
   tempRooms,
   tempParticipants,
   tempSessionPreferences,
+  tempRecommendations,
+  tempVotes,
 } from './tempStorage';
 
 // ========================================
@@ -146,18 +148,17 @@ export const sessionPreferencesRepository = {
 // RECOMMENDATIONS REPOSITORY
 // ========================================
 export const recommendationsRepository = {
-  // TODO: Replace with Supabase:
+  // TODO: Replace with Supabase or backend API:
   // await supabase.from('recommendations').select('*').eq('room_id', roomId)
+  // OR: await fetch('/api/recommendations?roomId=' + roomId)
   getByRoom: async (roomId: string) => {
-    // TODO: Implement when backend is ready
-    throw new Error('Not implemented - use mock data for now');
+    return tempRecommendations.getByRoom(roomId);
   },
 
   // TODO: Replace with Supabase:
   // await supabase.from('recommendations').insert(recommendation).select().single()
   create: async (recommendation: any) => {
-    // TODO: Implement when backend is ready
-    throw new Error('Not implemented');
+    throw new Error('Not implemented - create recommendations via backend/AI service');
   },
 };
 
@@ -168,8 +169,7 @@ export const votesRepository = {
   // TODO: Replace with Supabase:
   // await supabase.from('votes').insert(vote)
   cast: async (vote: any) => {
-    // TODO: Implement when backend is ready
-    throw new Error('Not implemented');
+    return tempVotes.cast(vote);
   },
 
   // TODO: Replace with Supabase:
@@ -177,15 +177,13 @@ export const votesRepository = {
   //   .delete()
   //   .eq('recommendation_id', recommendationId)
   //   .eq('user_id', userId)
-  remove: async (recommendationId: string, userId: string) => {
-    // TODO: Implement when backend is ready
-    throw new Error('Not implemented');
+  remove: async (roomId: string, recommendationId: string, userId: string) => {
+    return tempVotes.remove(roomId, recommendationId, userId);
   },
 
   // TODO: Replace with Supabase:
   // await supabase.from('votes').select('*').eq('room_id', roomId)
   getByRoom: async (roomId: string) => {
-    // TODO: Implement when backend is ready
-    throw new Error('Not implemented');
+    return tempVotes.getByRoom(roomId);
   },
 };
