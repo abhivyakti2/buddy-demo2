@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
@@ -13,6 +13,7 @@ const PreferencesForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  //food pref? //atmosphere? //activities?
 
   const [formData, setFormData] = useState({
     activities: [] as string[],

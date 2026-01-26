@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,8 +7,6 @@ import {
   Play,
   Square,
   Eye,
-  Sparkles,
-  UserCircle,
   Crown,
   Heart
 } from 'lucide-react';
