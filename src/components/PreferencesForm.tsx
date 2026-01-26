@@ -151,11 +151,41 @@ const PreferencesForm = () => {
         home_address: formData.homeAddress,
       };
 
+      // =============================================================================
+      // TEMPORARY STORAGE: Saving user preferences to backend
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Saves the user's general preferences (activities, food, transport, address)
+      // to persistent storage so they can be reused across multiple room sessions.
+      //
+      // WHY SAVE BEFORE REDUX:
+      // We need to ensure preferences are persisted to storage FIRST. If the save
+      // fails, we don't want Redux to think preferences were saved when they weren't.
+      //
+      // DATA FLOW:
+      // 1. User completes preferences form → Save to temporary storage (or real database)
+      // 2. If successful → Dispatch to Redux (becomes source of truth)
+      // 3. Redux updates → Navigate to room selection
+      // 4. Preferences now available for all future room sessions
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { error: upsertError } = await preferencesRepository.save(user.id, preferences);
 
+      // ERROR HANDLING:
+      // If save fails, throw error and skip Redux update/navigation.
+      // This prevents the app from thinking preferences were saved when they weren't.
       if (upsertError) throw upsertError;
 
+      // SUCCESS: Preferences saved successfully to backend!
+      // NOW we dispatch to Redux to update the in-memory state.
+      //
+      // WHY DISPATCH TO REDUX NOW:
+      // Preferences are safely stored in backend. Redux becomes the source of truth
+      // for this session, allowing all components to access preferences without
+      // re-fetching from storage.
+      //
+      // DATA FLOW:
+      // Backend storage (permanent) → Redux (session memory) → UI components (render)
       dispatch(setUserPreferences(preferences));
       navigate('/room-selection');
     } catch (err: any) {

@@ -100,12 +100,37 @@ const CreateRoomForm = () => {
       }
 
       try {
+        // =============================================================================
+        // TEMPORARY STORAGE: Fetching user preferences from backend
+        // =============================================================================
+        // WHAT THIS DOES:
+        // Retrieves the user's saved preferences (food choices, activities, transport)
+        // from persistent storage so we can pre-fill the room creation form.
+        //
+        // WHY FETCH BEFORE REDUX:
+        // Redux stores current in-memory state, but the backend stores permanent data.
+        // We need to fetch the latest saved preferences from storage FIRST, then put
+        // them into Redux so all components can access them.
+        //
+        // DATA FLOW:
+        // 1. Component loads → Fetch from temporary storage (or real database)
+        // 2. If successful → Dispatch to Redux (becomes source of truth)
+        // 3. Redux updates → Component re-renders with fetched data
+        // 4. Form fields pre-populate with user's saved preferences
+        // =============================================================================
         // TODO: Replace this with real DB / Supabase / API call
         const { data, error } = await preferencesRepository.get(user.id);
 
+        // ERROR HANDLING:
+        // If the fetch fails (error exists), we throw and skip Redux update.
+        // This prevents corrupted or incomplete data from reaching Redux and the UI.
         if (error) throw error;
 
         if (data) {
+          // SUCCESS: Data fetched successfully, now update Redux
+          // WHY DISPATCH TO REDUX:
+          // Redux becomes the single source of truth for this session.
+          // Other components can now read preferences from Redux without refetching.
           dispatch(setUserPreferences(data));
           setFormData((prev) => ({
             ...prev,
@@ -116,6 +141,9 @@ const CreateRoomForm = () => {
           }));
         }
       } catch (err) {
+        // ERROR HANDLING:
+        // If fetch fails, we log the error but don't dispatch to Redux.
+        // Form remains empty rather than showing incorrect/stale data.
         console.error('Error loading preferences:', err);
       } finally {
         setLoading(false);
@@ -209,14 +237,45 @@ const CreateRoomForm = () => {
         is_active: false,
       };
 
+      // =============================================================================
+      // TEMPORARY STORAGE: Creating a new room in the backend
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Saves the new room to persistent storage so it exists beyond this session.
+      // Creates a permanent record that other users can join via the room code.
+      //
+      // WHY SAVE BEFORE REDUX:
+      // The backend generates important data (like the room ID) that we need before
+      // we can dispatch to Redux. We must wait for the save to complete successfully.
+      //
+      // DATA FLOW:
+      // 1. User submits form → Save room to temporary storage (or real database)
+      // 2. Backend returns created room with generated ID
+      // 3. Dispatch room to Redux (discussed below after all saves complete)
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { data: room, error: roomError } = await roomsRepository.create(roomData);
 
+      // ERROR HANDLING:
+      // If room creation fails, throw error and skip all remaining operations.
+      // This prevents adding participants or preferences to a non-existent room.
       if (roomError) throw roomError;
 
+      // =============================================================================
+      // TEMPORARY STORAGE: Adding creator as first participant
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Adds the room creator to the participants list so they appear in the room.
+      //
+      // WHY SAVE BEFORE REDUX:
+      // We need to ensure the creator is registered as a participant in storage
+      // before moving forward. This creates a permanent record of room membership.
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { error: participantError } = await participantsRepository.add(room.id, user.id);
 
+      // ERROR HANDLING:
+      // If adding participant fails, throw error and skip remaining operations.
       if (participantError) throw participantError;
 
       const allActivities = formData.customActivity.trim()
@@ -237,11 +296,35 @@ const CreateRoomForm = () => {
         },
       };
 
+      // =============================================================================
+      // TEMPORARY STORAGE: Saving session-specific preferences
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Saves preferences for THIS specific room/outing. These are different from
+      // general user preferences (e.g., "For this birthday party, I want Italian food"
+      // even though I normally prefer Chinese).
+      //
+      // WHY SAVE BEFORE REDUX:
+      // We need to ensure preferences are persisted to storage before continuing.
+      // This creates a permanent record tied to this specific room session.
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { error: prefsError } = await sessionPreferencesRepository.save(room.id, user.id, sessionPrefs);
 
+      // ERROR HANDLING:
+      // If saving preferences fails, throw error and skip Redux/navigation.
       if (prefsError) throw prefsError;
 
+      // SUCCESS: All backend saves completed successfully!
+      // NOW we dispatch to Redux to update the in-memory state.
+      //
+      // WHY DISPATCH TO REDUX NOW:
+      // All data is safely stored in the backend. Redux becomes the source of truth
+      // for this session, allowing all components to access room/preference data
+      // without re-fetching from storage.
+      //
+      // DATA FLOW:
+      // Backend storage (permanent) → Redux (session memory) → UI components (render)
       dispatch(setCurrentRoom(room));
       dispatch(setSessionPreferences(sessionPrefs));
 

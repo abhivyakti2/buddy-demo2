@@ -29,20 +29,54 @@ const RoomSelection = () => {
     setError('');
 
     try {
+      // =============================================================================
+      // TEMPORARY STORAGE: Finding room by code in backend
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Searches the backend for a room matching the entered room code so the user
+      // can join an existing room created by someone else.
+      //
+      // WHY FETCH BEFORE REDUX:
+      // We need to verify the room exists and get its full details (ID, creator, etc.)
+      // before we can add the user as a participant or update Redux.
+      //
+      // DATA FLOW:
+      // 1. User enters room code → Search temporary storage (or real database)
+      // 2. If found → Add user as participant
+      // 3. Dispatch room data to Redux → Navigate to room page
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { data: room, error: roomError } = await roomsRepository.getByCode(roomCode.trim().toUpperCase());
 
+      // ERROR HANDLING:
+      // If the fetch fails, throw error and skip all remaining operations.
       if (roomError) throw roomError;
 
+      // VALIDATION:
+      // If no room found with this code, show user-friendly error and stop.
+      // Don't dispatch to Redux since there's no valid room data.
       if (!room) {
         setError('Room not found. Please check the room code.');
         setLoading(false);
         return;
       }
 
+      // =============================================================================
+      // TEMPORARY STORAGE: Adding user as participant to the room
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Registers this user as a participant in the room so they appear in the
+      // participants list and can vote on recommendations.
+      //
+      // WHY SAVE BEFORE REDUX:
+      // We must persist the participant record to storage before proceeding.
+      // This creates a permanent record of room membership.
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { error: participantError } = await participantsRepository.add(room.id, user.id);
 
+      // ERROR HANDLING:
+      // If adding participant fails, throw error and skip remaining operations.
       if (participantError) throw participantError;
 
       const sessionPrefs = {
@@ -56,11 +90,33 @@ const RoomSelection = () => {
         food_preferences: userPreferences?.food_preferences || { categories: [], restrictions: '' },
       };
 
+      // =============================================================================
+      // TEMPORARY STORAGE: Saving default session preferences for joined room
+      // =============================================================================
+      // WHAT THIS DOES:
+      // Creates initial session preferences using the user's general preferences.
+      // These can be customized later for this specific room/outing.
+      //
+      // WHY SAVE BEFORE REDUX:
+      // We need to persist these preferences to storage so they're available
+      // when generating recommendations and calculating best matches.
+      // =============================================================================
       // TODO: Replace this with real DB / Supabase / API call
       const { error: prefsError } = await sessionPreferencesRepository.save(room.id, user.id, sessionPrefs);
 
+      // ERROR HANDLING:
+      // If saving preferences fails, throw error and skip Redux/navigation.
       if (prefsError) throw prefsError;
 
+      // SUCCESS: All backend operations completed successfully!
+      // NOW we dispatch to Redux to update the in-memory state.
+      //
+      // WHY DISPATCH TO REDUX NOW:
+      // User successfully joined the room and all data is stored in backend.
+      // Redux becomes the source of truth for this session.
+      //
+      // DATA FLOW:
+      // Backend storage (permanent) → Redux (session memory) → UI components (render)
       dispatch(setCurrentRoom(room));
       dispatch(setSessionPreferences(sessionPrefs));
       navigate(`/room/${room.id}`);
@@ -72,8 +128,26 @@ const RoomSelection = () => {
   };
 
   const handleLogout = async () => {
+    // =============================================================================
+    // TEMPORARY STORAGE: Clearing user session on logout
+    // =============================================================================
+    // WHAT THIS DOES:
+    // Removes the user's authentication session from storage, effectively logging
+    // them out of the application.
+    //
+    // WHY CLEAR BACKEND FIRST:
+    // We must clear the session in storage BEFORE clearing Redux. This ensures
+    // if the app reloads, the user won't be automatically logged back in.
+    //
+    // DATA FLOW:
+    // 1. User clicks logout → Clear session from temporary storage (or real auth service)
+    // 2. Dispatch logout to Redux → Clears all user data from memory
+    // 3. Navigate to login page
+    // =============================================================================
     // TODO: Replace this with real DB / Supabase / API call
     await authRepository.signOut();
+
+    // Clear Redux state after backend logout succeeds
     dispatch(logout());
     navigate('/');
   };

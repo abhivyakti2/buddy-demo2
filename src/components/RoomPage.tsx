@@ -38,6 +38,22 @@ const RoomPage = () => {
 
     const loadParticipants = async () => {
       try {
+        // =============================================================================
+        // TEMPORARY STORAGE: Fetching room participants from backend
+        // =============================================================================
+        // WHAT THIS DOES:
+        // Retrieves the list of all users who have joined this room so we can display
+        // them in the participants panel.
+        //
+        // WHY FETCH BEFORE REDUX:
+        // Participant data is stored permanently in the backend. We need to load it
+        // first, then put it into Redux so the UI can display the participants list.
+        //
+        // DATA FLOW:
+        // 1. Component mounts → Fetch participants from temporary storage (or real database)
+        // 2. Enrich with user details (email addresses)
+        // 3. Dispatch to Redux → Participants panel displays the list
+        // =============================================================================
         // TODO: Replace this with real DB / Supabase / API call
         const { data } = await participantsRepository.get(roomId);
 
@@ -51,9 +67,16 @@ const RoomPage = () => {
               : ['stella@example.com', 'aurora@example.com', 'iris@example.com'][index % 3]
           }));
 
+          // SUCCESS: Participants loaded successfully, now update Redux
+          // WHY DISPATCH TO REDUX:
+          // Redux becomes the single source of truth for participants in this session.
+          // The participants panel component will automatically re-render with this data.
           dispatch(setParticipants(enrichedParticipants));
         }
       } catch (error) {
+        // ERROR HANDLING:
+        // If fetch fails, log the error but don't dispatch to Redux.
+        // Participants panel will remain empty rather than showing incorrect data.
         console.error('Error loading participants:', error);
       }
     };
@@ -78,9 +101,26 @@ const RoomPage = () => {
   const startVoting = async () => {
     if (!roomId || !isHost) return;
 
-    // Update Redux state
+    // OPTIMISTIC UPDATE: Update Redux immediately for instant UI feedback
+    // This makes the UI feel responsive while we wait for backend confirmation.
     dispatch(updateRoomStatus(true));
 
+    // =============================================================================
+    // TEMPORARY STORAGE: Persisting voting status to backend
+    // =============================================================================
+    // WHAT THIS DOES:
+    // Updates the room's is_active flag in the backend so the voting status is
+    // saved permanently. Other participants will see this when they refresh.
+    //
+    // WHY SAVE AFTER REDUX:
+    // We already updated Redux optimistically for instant UI response. Now we
+    // persist to backend for permanence and to enable real-time sync via WebSocket.
+    //
+    // DATA FLOW:
+    // 1. User clicks "Start Voting" → Dispatch to Redux (optimistic)
+    // 2. Save to temporary storage (or real database) for permanence
+    // 3. Emit WebSocket event → Other participants see update in real-time
+    // =============================================================================
     // TODO: Replace this with real DB / Supabase / API call
     await roomsRepository.update(roomId, { is_active: true });
 
@@ -93,9 +133,25 @@ const RoomPage = () => {
   const endVoting = async () => {
     if (!roomId || !isHost) return;
 
-    // Update Redux state
+    // OPTIMISTIC UPDATE: Update Redux immediately for instant UI feedback
     dispatch(updateRoomStatus(false));
 
+    // =============================================================================
+    // TEMPORARY STORAGE: Persisting voting end status to backend
+    // =============================================================================
+    // WHAT THIS DOES:
+    // Updates the room's is_active flag to false, marking voting as ended.
+    // This prevents new votes and shows results instead.
+    //
+    // WHY SAVE AFTER REDUX:
+    // Redux was already updated optimistically. Now we persist to backend so the
+    // voting status is saved permanently and can sync to other participants.
+    //
+    // DATA FLOW:
+    // 1. Host clicks "End Voting" → Dispatch to Redux (optimistic)
+    // 2. Save to temporary storage (or real database) for permanence
+    // 3. Emit WebSocket event → Other participants see voting has ended
+    // =============================================================================
     // TODO: Replace this with real DB / Supabase / API call
     await roomsRepository.update(roomId, { is_active: false });
 
