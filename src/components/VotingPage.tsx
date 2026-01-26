@@ -9,7 +9,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addVote, removeVote, setRecommendations, setVotes } from '../store/recommendationsSlice';
+import { setRecommendations } from '../store/recommendationsSlice';
+import { addVote, removeVote, setVotesForRecommendation } from '../store/votesSlice';
 import { socketEvents } from '../lib/socket';
 import { recommendationsRepository, votesRepository } from '../lib/repositories';
 
@@ -24,7 +25,7 @@ const VotingPage = () => {
 
   // Shared state - Get from Redux
   const recommendations = useAppSelector((state) => state.recommendations.recommendations);
-  const votes = useAppSelector((state) => state.recommendations.votes);
+  const votes = useAppSelector((state) => state.votes.votesByRecommendation);
 
   // TODO: Load recommendations from backend/database when room starts voting
   useEffect(() => {
@@ -43,7 +44,7 @@ const VotingPage = () => {
         if (votesData) {
           // Load existing votes into Redux
           Object.entries(votesData).forEach(([recId, votesList]) => {
-            dispatch(setVotes({ recommendationId: recId, votes: votesList as any }));
+            dispatch(setVotesForRecommendation({ recommendationId: recId, votes: votesList as any }));
           });
         }
       } catch (error) {

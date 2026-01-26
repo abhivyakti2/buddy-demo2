@@ -11,7 +11,8 @@ import {
   updateParticipantStatus,
   updateRoomStatus,
 } from '../store/roomsSlice';
-import { addVote, addRecommendation } from '../store/recommendationsSlice';
+import { addVote } from '../store/votesSlice';
+import { addRecommendation } from '../store/recommendationsSlice';
 
 // TODO: Replace with real WebSocket implementation
 // This file currently simulates WebSocket behavior

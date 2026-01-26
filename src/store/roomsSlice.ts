@@ -61,25 +61,36 @@ const roomsSlice = createSlice({
   name: 'rooms',
   initialState,
   reducers: {
+    // Set the current room
+    // TODO: Dispatch this after fetching room from Supabase rooms table
     setCurrentRoom: (state, action: PayloadAction<Room>) => {
       state.currentRoom = action.payload;
       state.loading = false;
       state.error = null;
     },
+    // Update room voting status (is_active)
+    // TODO: Persist to Supabase rooms table after dispatching this action
+    // TODO: Emit WebSocket event for real-time updates to all participants
     updateRoomStatus: (state, action: PayloadAction<boolean>) => {
       if (state.currentRoom) {
         state.currentRoom.is_active = action.payload;
       }
     },
+    // Set all participants for the current room
+    // TODO: Dispatch this after fetching participants from Supabase room_participants table
     setParticipants: (state, action: PayloadAction<Participant[]>) => {
       state.participants = action.payload;
     },
+    // Add a new participant to the room
+    // TODO: Dispatch this when WebSocket receives participant-joined event
     addParticipant: (state, action: PayloadAction<Participant>) => {
       const exists = state.participants.find(p => p.user_id === action.payload.user_id);
       if (!exists) {
         state.participants.push(action.payload);
       }
     },
+    // Update participant online status
+    // TODO: Dispatch this when WebSocket receives participant status change event
     updateParticipantStatus: (state, action: PayloadAction<{ user_id: string; is_online: boolean }>) => {
       const participant = state.participants.find(p => p.user_id === action.payload.user_id);
       if (participant) {
@@ -87,21 +98,28 @@ const roomsSlice = createSlice({
         participant.last_seen = new Date().toISOString();
       }
     },
+    // Set session-specific preferences for this room
+    // TODO: Dispatch this after fetching from Supabase session_preferences table
     setSessionPreferences: (state, action: PayloadAction<SessionPreferences>) => {
       state.sessionPreferences = action.payload;
     },
+    // Update WebSocket connection status
+    // TODO: Dispatch this from WebSocket service based on connection state
     setWebsocketStatus: (state, action: PayloadAction<'connected' | 'disconnected' | 'connecting'>) => {
       state.websocketStatus = action.payload;
     },
+    // Clear all room data (on leaving room)
     clearRoom: (state) => {
       state.currentRoom = null;
       state.participants = [];
       state.sessionPreferences = null;
       state.websocketStatus = 'disconnected';
     },
+    // Set loading state
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
+    // Set error state
     setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload;
       state.loading = false;
