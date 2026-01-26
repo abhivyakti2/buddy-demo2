@@ -1,12 +1,11 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 
-interface ProtectedRouteProps {
+type ProtectedRouteProps = {
   children: React.ReactNode;
-}
+};
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAppSelector((state) => state.auth);
 
   if (loading) {
@@ -18,6 +17,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   return <>{children}</>;
-};
+}
 
 export default ProtectedRoute;

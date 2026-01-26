@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch } from '../../store/hooks';
 import { setUser, setSession, setLoading } from '../../store/authSlice';
 import { motion } from 'framer-motion';
 import { authRepository } from '../../lib/repositories';
 
-interface AuthProviderProps {
+type AuthProviderProps = {
   children: React.ReactNode;
-}
+};
 
-const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+function AuthProvider({ children }: AuthProviderProps) {
   const dispatch = useAppDispatch();
   const [initializing, setInitializing] = useState(true);
 
@@ -57,6 +57,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   return <>{children}</>;
-};
+}
 
 export default AuthProvider;
