@@ -49,7 +49,7 @@ const HomePage = () => {
                 required
               />
             </div>
-            
+
             <div className="input-group">
               <input
                 type="email"
@@ -60,7 +60,7 @@ const HomePage = () => {
                 required
               />
             </div>
-            
+
             <div className="input-group">
               <input
                 type="password"
