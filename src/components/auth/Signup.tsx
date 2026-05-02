@@ -34,43 +34,13 @@ const Signup = () => {
     }
 
     try {
-      // =============================================================================
-      // TEMPORARY STORAGE: Creating new user account in backend
-      // =============================================================================
-      // WHAT THIS DOES:
-      // Creates a new user account in the backend authentication system with the
-      // provided email and password, and establishes a login session.
-      //
-      // WHY CREATE BEFORE REDUX:
-      // We must create the account in the backend FIRST before trusting the user data.
-      // The backend validates email format, password strength, checks for duplicates,
-      // and generates a unique user ID. Only after successful creation do we store
-      // user data in Redux.
-      //
-      // DATA FLOW:
-      // 1. User submits signup form → Create account in temporary storage (or real auth service)
-      // 2. Backend creates user and returns user data with generated ID
-      // 3. If successful → Dispatch to Redux (user is now authenticated)
-      // 4. Navigate to preferences to complete onboarding
-      // =============================================================================
-      // TODO: Replace this with real DB / Supabase / API call
+
       const { data, error: signUpError } = await authRepository.signUp(email, password);
 
-      // ERROR HANDLING:
-      // If account creation fails (email already exists, weak password, etc.),
-      // throw error and skip Redux update. User stays on signup page with error message.
       if (signUpError) throw signUpError;
 
       if (data.user) {
-        // SUCCESS: Account created successfully!
-        // NOW we dispatch to Redux to store the newly created user.
-        //
-        // WHY DISPATCH TO REDUX NOW:
-        // Account creation succeeded, user is now authenticated. Redux becomes the
-        // source of truth for this new user session throughout the app.
-        //
-        // DATA FLOW:
-        // Backend auth (create account) → Redux (store user session) → UI (show success + redirect)
+
         dispatch(setUser(data.user as any));
         setSuccess(true);
         setTimeout(() => {
@@ -78,9 +48,7 @@ const Signup = () => {
         }, 2000);
       }
     } catch (err: any) {
-      // ERROR HANDLING:
-      // If signup fails, show error message but don't dispatch to Redux.
-      // User remains unauthenticated and stays on signup page.
+
       setError(err.message || 'Failed to create account');
     } finally {
       setLoading(false);

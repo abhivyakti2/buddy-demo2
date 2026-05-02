@@ -19,69 +19,33 @@ const VotingPage = () => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
-  // UI state - Keep in local state (not Redux)
   const [currentRecommendationIndex, setCurrentRecommendationIndex] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Shared state - Get from Redux
   const recommendations = useAppSelector((state) => state.recommendations.recommendations);
   const votes = useAppSelector((state) => state.votes.votesByRecommendation);
 
-  // TODO: Load recommendations from backend/database when room starts voting
   useEffect(() => {
     if (!roomId) return;
 
     const loadData = async () => {
       try {
-        // =============================================================================
-        // TEMPORARY STORAGE: Fetching recommendations from backend
-        // =============================================================================
-        // WHAT THIS DOES:
-        // Retrieves the list of place recommendations (restaurants, activities, etc.)
-        // generated for this room so users can vote on them.
-        //
-        // WHY FETCH BEFORE REDUX:
-        // Recommendations are generated and stored in the backend (by AI or admin).
-        // We need to load them first, then put them into Redux for the voting UI.
-        //
-        // DATA FLOW:
-        // 1. Voting page loads → Fetch recommendations from temporary storage (or real database)
-        // 2. Dispatch to Redux → Recommendation cards appear in carousel
-        // =============================================================================
-        // TODO: Replace this with real DB / Supabase / API call
+
         const { data: recs } = await recommendationsRepository.getByRoom(roomId);
         if (recs && recs.length > 0) {
-          // SUCCESS: Recommendations loaded, dispatch to Redux
+
           dispatch(setRecommendations(recs as any));
         }
 
-        // =============================================================================
-        // TEMPORARY STORAGE: Fetching existing votes from backend
-        // =============================================================================
-        // WHAT THIS DOES:
-        // Retrieves all votes cast by all participants for all recommendations in
-        // this room. This shows which recommendations are popular.
-        //
-        // WHY FETCH BEFORE REDUX:
-        // Votes are stored in the backend as participants vote. We need to load
-        // existing votes so the UI shows accurate vote counts and user vote status.
-        //
-        // DATA FLOW:
-        // 1. Voting page loads → Fetch votes from temporary storage (or real database)
-        // 2. Dispatch to Redux → Vote counts and "voted" indicators update
-        // =============================================================================
-        // TODO: Replace this with real DB / Supabase / API call
         const { data: votesData } = await votesRepository.getByRoom(roomId);
         if (votesData) {
-          // Load existing votes into Redux
-          // SUCCESS: Votes loaded, dispatch each recommendation's votes to Redux
+
           Object.entries(votesData).forEach(([recId, votesList]) => {
             dispatch(setVotesForRecommendation({ recommendationId: recId, votes: votesList as any }));
           });
         }
       } catch (error) {
-        // ERROR HANDLING:
-        // If loading fails, log error but don't crash. Page shows empty state.
+
         console.error('Error loading recommendations:', error);
       }
     };
@@ -99,46 +63,23 @@ const VotingPage = () => {
 
   const currentRec = recommendations[currentRecommendationIndex];
 
-  // Check if current user has voted for this recommendation
   const userVote = votes[currentRec.id]?.find((vote: any) => vote.user_id === user?.id);
   const hasVoted = !!userVote;
 
-  // Count total votes for this recommendation
   const totalVotes = votes[currentRec.id]?.length || 0;
 
-  // Voting handler - dispatches Redux action and persists to storage
   const handleVote = async (recommendationId: string) => {
     if (!user || !roomId) return;
 
     if (hasVoted) {
-      // OPTIMISTIC UPDATE: Remove vote from Redux immediately for instant UI feedback
-      // The heart icon empties and vote count decreases right away.
+
       dispatch(removeVote({ recommendationId, userId: user.id }));
 
-      // =============================================================================
-      // TEMPORARY STORAGE: Removing vote from backend
-      // =============================================================================
-      // WHAT THIS DOES:
-      // Deletes the user's vote from persistent storage when they "un-vote" by
-      // clicking the vote button again.
-      //
-      // WHY SAVE AFTER REDUX:
-      // Redux was already updated optimistically for instant UI response. Now we
-      // persist the vote removal to backend so it's permanent and can sync to others.
-      //
-      // DATA FLOW:
-      // 1. User clicks vote again (to remove) → Dispatch to Redux (optimistic)
-      // 2. Remove from temporary storage (or real database) for permanence
-      // 3. Emit WebSocket event → Other participants see vote count decrease
-      // =============================================================================
-      // TODO: Replace this with real DB / Supabase / API call
       await votesRepository.remove(roomId, recommendationId, user.id);
 
-      // TODO: Emit vote removal event via WebSocket for real-time updates
       socketEvents.castVote(roomId, recommendationId, user.id, 'removed');
     } else {
-      // OPTIMISTIC UPDATE: Add vote to Redux immediately for instant UI feedback
-      // The heart icon fills and vote count increases right away.
+
       const vote = {
         id: `vote_${Date.now()}`,
         room_id: roomId,
@@ -149,26 +90,8 @@ const VotingPage = () => {
       };
       dispatch(addVote(vote as any));
 
-      // =============================================================================
-      // TEMPORARY STORAGE: Saving vote to backend
-      // =============================================================================
-      // WHAT THIS DOES:
-      // Saves the user's vote to persistent storage so it's recorded permanently
-      // and visible to all participants in the room.
-      //
-      // WHY SAVE AFTER REDUX:
-      // Redux was already updated optimistically for instant UI response. Now we
-      // persist the vote to backend so it's permanent and can sync to other users.
-      //
-      // DATA FLOW:
-      // 1. User clicks vote → Dispatch to Redux (optimistic, instant UI update)
-      // 2. Save to temporary storage (or real database) for permanence
-      // 3. Emit WebSocket event → Other participants see vote count increase in real-time
-      // =============================================================================
-      // TODO: Replace this with real DB / Supabase / API call
       await votesRepository.cast(vote);
 
-      // TODO: Emit vote cast event via WebSocket for real-time updates
       socketEvents.castVote(roomId, recommendationId, user.id, 'yes');
     }
   };
@@ -201,7 +124,6 @@ const VotingPage = () => {
 
   return (
     <div className="min-h-screen p-4">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -257,7 +179,6 @@ const VotingPage = () => {
             transition={{ duration: 0.5 }}
             className="glass-card overflow-hidden"
           >
-            {/* Image Carousel */}
             <div className="relative h-64 md:h-80 overflow-hidden">
               <AnimatePresence mode="wait">
                 <motion.img
@@ -272,7 +193,6 @@ const VotingPage = () => {
                 />
               </AnimatePresence>
 
-              {/* Image Navigation */}
               <button
                 onClick={prevImage}
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 magical-icon-button"
@@ -286,7 +206,6 @@ const VotingPage = () => {
                 <ChevronRight size={24} />
               </button>
 
-              {/* Image Indicators */}
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                 {currentRec.images.map((_, index) => (
                   <button
@@ -301,9 +220,8 @@ const VotingPage = () => {
                 ))}
               </div>
 
-              {/* Magical overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-              
+
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -313,7 +231,6 @@ const VotingPage = () => {
               </motion.div>
             </div>
 
-            {/* Content */}
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <motion.h2
@@ -348,7 +265,6 @@ const VotingPage = () => {
                 </motion.button>
               </div>
 
-              {/* Parameters Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(currentRec.parameters).map(([key, param], index) => (
                   <motion.div
@@ -366,10 +282,10 @@ const VotingPage = () => {
                         {key}
                       </h4>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <p className="text-white font-medium">{param.value}</p>
-                      
+
                       <div className="parameter-score">
                         <div className="score-bar">
                           <motion.div
@@ -386,7 +302,6 @@ const VotingPage = () => {
                 ))}
               </div>
 
-              {/* Bottom Actions */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
